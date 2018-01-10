@@ -13,6 +13,83 @@ Many users run straight from the development branch (it's generally fine to do s
 
 You can find instructions [here](https://docs.ansible.com/ansible/intro_installation.html) for a variety of platforms.
 
+Changing the SSH port with Ansible?
+===================================
+
+This fork/branch of https://github.com/ansible/ansible provides a patch to test a non-standard ssh port specification and revert to the default ssh port (normally 22) if the non-standard port is not open. Essentially, Ansible uses the following logic to employ ssh:
+
+<pre><code>
+      if self.port is not None:
+         ssh -p {{ self.port }} ...
+      else:
+         ssh ...
+</code></pre>
+
+This patch changes the logic to:
+
+<pre><code>
+      if self.port is not None and self.port is OPEN:
+         ssh -p {{ self.port }} ...
+      else:
+         ssh ...
+</code></pre>
+
+Currently the recommended way to handle ssh port changes with an un-patched Ansible is to use wait_for/when tasks in a playbook as follows:
+
+<pre><code>
+---
+# file: demo.yaml
+# ansible_ssh_port is used in preference to ansible_port because it works across Ansible v1 and v2.
+
+- hosts: all
+  gather_facts: false
+  vars:
+    ansible_ssh_port: 2222
+
+  pre_tasks:
+    - name: Test connection to port 2222
+      local_action:
+        module: wait_for
+        port: "{{ ansible_ssh_port }}"
+        timeout: 5
+      register: test_2222
+      ignore_errors: true
+
+    - name: Set ansible_ssh_port to 22 if cannot connect to 2222
+      set_fact:
+        ansible_ssh_port: 22
+      when: test_2222.elapsed >= 5
+
+    - setup:
+
+  roles:
+    - set_non-std_port
+</code></pre>
+
+In a multi-host environment, this method is unreliable because it tests a single host but applies the result to all hosts. In contrast, the patch tests the port on each host as the connection is required, applies the result only to the tested host and requires no specific specification in the playbook. The directory ssh_port_setting_example provides demonstration playbooks and templates for ssh port setting to exercise the patch's function:
+
+<pre><code>
+---
+# file: demo.yaml
+# The non-standard ssh ports are specified in the host inventory and could be different for
+# each host; see "ssh_port_setting_example" directory.
+
+- hosts: all
+  roles:
+    - set_non-std_port
+</code></pre>
+
+Installation of the patch
+=========================
+
+   1. Remove any current installation of ansible.
+   1. Clone the Ansible fork with "git clone git@github.com:crlb/ansible.git".
+   1. Switch to the cloned repository (ie. "cd ansible") and  choose the version to install by using the the "git checkout {{patched-\*}}" command.
+   1. Install the Ansible core modules with "git submodule update --init --recursive".
+   1. Install the patched ansible with "python setup.py install".
+
+And now, back to ...
+
 Design Principles
 =================
 
