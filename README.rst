@@ -62,7 +62,7 @@ Installation of the patch
 
 * Remove any current installation of ansible.
 * Clone the Ansible fork with "git clone git@github.com:hep-gc/ansible.git".
-1. Switch to the cloned repository (ie. "cd ansible") and  choose the version to install by using the the "git checkout {{patched-\*}}" command.
+* Switch to the cloned repository (ie. "cd ansible") and  choose the version to install by using the the "git checkout {{patched-\*}}" command.
 * Install the Ansible core modules with "git submodule update --init --recursive".
 * Install the patched ansible with "python setup.py install".
 
