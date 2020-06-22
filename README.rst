@@ -40,6 +40,32 @@ features and fixes, directly. Although it is reasonably stable, you are more lik
 breaking changes when running the ``devel`` branch. We recommend getting involved
 in the Ansible community if you want to run the ``devel`` branch.
 
+Changing the SSH port with Ansible?
+===================================
+
+This fork/branch of https://github.com/ansible/ansible provides a patch to test a non-standard ssh port specification and revert to the default ssh port (normally 22) if the non-standard port is not open. Essentially, Ansible uses the following logic to employ ssh:
+
+    if self.port is not None:
+       ssh -p {{ self.port }} ...
+    else:
+       ssh ...
+
+This patch changes the logic to:
+
+    if self.port is not None and self.port is OPEN:
+       ssh -p {{ self.port }} ...
+    else:
+       ssh ...
+
+Installation of the patch
+=========================
+
+1. Remove any current installation of ansible.
+1. Clone the Ansible fork with "git clone git@github.com:hep-gc/ansible.git".
+1. Switch to the cloned repository (ie. "cd ansible") and  choose the version to install by using the the "git checkout {{patched-\*}}" command.
+1. Install the Ansible core modules with "git submodule update --init --recursive".
+1. Install the patched ansible with "python setup.py install".
+
 Get Involved
 ============
 
